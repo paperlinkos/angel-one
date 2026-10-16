@@ -1,0 +1,12 @@
+import Database from 'better-sqlite3'
+import { mkdirSync } from 'node:fs'
+import { dirname } from 'node:path'
+export function createDb(path = process.env.DATABASE_PATH || './data/angel-one.db') {
+  mkdirSync(dirname(path), { recursive: true }); const db = new Database(path); db.pragma('journal_mode = WAL')
+  db.exec(`CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, created_at TEXT DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS messages (id TEXT PRIMARY KEY, session_id TEXT, role TEXT, content TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS devotionals (id TEXT PRIMARY KEY, date TEXT UNIQUE, title TEXT, body TEXT, source_label TEXT); CREATE TABLE IF NOT EXISTS teachings (id TEXT PRIMARY KEY, title TEXT, speaker TEXT, description TEXT, tags TEXT, duration TEXT, source_label TEXT); CREATE TABLE IF NOT EXISTS media (id TEXT PRIMARY KEY, title TEXT, kind TEXT, duration TEXT, source_label TEXT); CREATE TABLE IF NOT EXISTS reminders (id TEXT PRIMARY KEY, title TEXT, datetime TEXT); CREATE TABLE IF NOT EXISTS media_queue (id TEXT PRIMARY KEY, media_id TEXT, queued_at TEXT DEFAULT CURRENT_TIMESTAMP);`)
+  if (!(db.prepare('SELECT COUNT(*) as count FROM devotionals').get() as any).count) {
+    db.prepare('INSERT INTO devotionals VALUES (?,?,?,?,?)').run('demo-dev-001','2026-10-16','Walk in the light of His Word','ORIGINAL DEMO devotional content: A quiet reflection on letting God’s Word guide your choices today.','ORIGINAL DEMO CONTENT — not an official Rhapsody reading')
+    const t=db.prepare('INSERT INTO teachings VALUES (?,?,?,?,?,?,?)'); t.run('demo-teach-001','The Divine Life in You','Original demo teaching metadata','A sample study conversation about identity and daily faith.','identity,life,faith','42 min','ORIGINAL DEMO CONTENT — not PCDL'); t.run('demo-teach-002','The Ministry of Prayer','Original demo teaching metadata','A sample exploration of prayerful habits.','prayer,faith','31 min','ORIGINAL DEMO CONTENT — not PCDL'); t.run('demo-teach-003','Living by the Word','Original demo teaching metadata','A sample study of keeping Scripture in view.','word,growth','38 min','ORIGINAL DEMO CONTENT — not PCDL')
+    const m=db.prepare('INSERT INTO media VALUES (?,?,?,?,?)');m.run('demo-media-001','Morning Scripture Reflection','audio','08:10','ORIGINAL DEMO AUDIO — no official connection');m.run('demo-media-002','Quiet Prayer Instrumental','audio','15:00','ORIGINAL DEMO AUDIO — no official connection')
+  } return db
+}
